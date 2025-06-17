@@ -1,3 +1,4 @@
+require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const app = express();
@@ -5,18 +6,14 @@ const port = process.env.PORT || 3000;
 const { MongoClient, ServerApiVersion } = require('mongodb');
 const { ObjectId } = require("mongodb");
 const jwt = require("jsonwebtoken");
-require('dotenv').config();
+
 
 // middleware
 app.use(cors());
 app.use(express.json());
 
 
-app.post("/jwt", async (req, res) => {
-  const user = req.body;
-  const token = jwt.sign(user, process.env.JWT_SECRET, { expiresIn: '2h' });
-  res.send({ token });
-});
+
 
 const verifyJWT = (req, res, next) => {
   const authHeader = req.headers.authorization;
@@ -45,12 +42,18 @@ const client = new MongoClient(uri, {
 
 async function run() {
   try {
-    
-    await client.connect();
+
+    // await client.connect();
 
     const db = client.db("prodQuestDB");
     const queriesCollection = db.collection("queries");
     const recommendationsCollection = db.collection("recommendations");
+
+    app.post("/jwt", async (req, res) => {
+      const user = req.body;
+      const token = jwt.sign(user, process.env.JWT_SECRET, { expiresIn: '2h' });
+      res.send({ token });
+    });
 
     app.post("/queries", async (req, res) => {
       const queryData = req.body;
@@ -103,7 +106,7 @@ async function run() {
       const recData = req.body;
       const result = await recommendationsCollection.insertOne(recData);
 
-      
+
       await queriesCollection.updateOne(
         { _id: new ObjectId(recData.queryId) },
         { $inc: { recommendationCount: 1 } }
@@ -179,12 +182,12 @@ async function run() {
 
       res.send(recommendations);
     });
-    
+
 
     app.get("/search-queries", verifyJWT, async (req, res) => {
       const { text } = req.query;
 
-      const searchRegex = new RegExp(text, "i"); 
+      const searchRegex = new RegExp(text, "i");
       const result = await queriesCollection
         .find({ productName: { $regex: searchRegex } })
         .sort({ timestamp: -1 })
@@ -197,8 +200,8 @@ async function run() {
 
 
     // Send a ping to confirm a successful connection
-    await client.db("admin").command({ ping: 1 });
-    console.log("Pinged your deployment. You successfully connected to MongoDB!");
+    // await client.db("admin").command({ ping: 1 });
+    // console.log("Pinged your deployment. You successfully connected to MongoDB!");
   } finally {
     // // Ensures that the client will close when you finish/error
     // await client.close();
