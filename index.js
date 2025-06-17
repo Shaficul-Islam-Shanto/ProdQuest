@@ -90,7 +90,16 @@ async function run() {
       res.send(result);
     });
 
-    app.post("/recommendations",verifyJWT, async (req, res) => {
+    app.get("/recent-queries", async (req, res) => {
+      const result = await queriesCollection
+        .find({})
+        .sort({ timestamp: -1 })
+        .limit(6)
+        .toArray();
+      res.send(result);
+    });
+
+    app.post("/recommendations", verifyJWT, async (req, res) => {
       const recData = req.body;
       const result = await recommendationsCollection.insertOne(recData);
 
@@ -102,7 +111,7 @@ async function run() {
       res.send(result);
     });
 
-    app.get("/recommendations/:queryId",verifyJWT, async (req, res) => {
+    app.get("/recommendations/:queryId", verifyJWT, async (req, res) => {
       const { queryId } = req.params;
       const recommendations = await recommendationsCollection
         .find({ queryId })
@@ -111,7 +120,7 @@ async function run() {
       res.send(recommendations);
     });
 
-    app.delete("/recommendations/:id",verifyJWT, async (req, res) => {
+    app.delete("/recommendations/:id", verifyJWT, async (req, res) => {
       const id = req.params.id;
 
       try {
@@ -138,7 +147,7 @@ async function run() {
       }
     });
 
-    app.get("/recommendations-by-user",verifyJWT, async (req, res) => {
+    app.get("/recommendations-by-user", verifyJWT, async (req, res) => {
       const { email } = req.query;
       if (!email) return res.status(400).send({ error: "Email is required" });
 
@@ -153,7 +162,7 @@ async function run() {
       }
     });
 
-    app.get("/my-query-recommendations",verifyJWT, async (req, res) => {
+    app.get("/my-query-recommendations", verifyJWT, async (req, res) => {
       const { email } = req.query;
 
       if (!email) {
@@ -171,7 +180,7 @@ async function run() {
       res.send(recommendations);
     });
 
-    app.get("/search-queries",verifyJWT, async (req, res) => {
+    app.get("/search-queries", verifyJWT, async (req, res) => {
       const { text } = req.query;
 
       const searchRegex = new RegExp(text, "i"); // case-insensitive
